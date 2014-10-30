@@ -10,11 +10,22 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent">
 
+
+        <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/circle"
+        android:background="@drawable/circle_yolo"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="center" />
+
+
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/circle"
-            android:background="@drawable/circle_yolo"
+            android:id="@+id/crazy_circle"
+            android:background="@drawable/ghost"
             android:layout_centerVertical="true"
             android:layout_centerHorizontal="true"
             android:layout_gravity="center" />
@@ -32,6 +43,9 @@
             android:textStyle="bold"
             android:textSize="80sp"
             android:typeface="sans" />
+
+
+
 
     </FrameLayout>
 </RelativeLayout>

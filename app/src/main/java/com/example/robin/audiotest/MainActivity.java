@@ -15,9 +15,12 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.Display;
 import android.view.DragEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.RotateAnimation;
@@ -74,17 +77,24 @@ public class MainActivity extends Activity implements SensorEventListener {
             "G#",
     };
 
+    ImageView crazyCircleView;
+
     private final Handler updateNoteLabelHandle = new Handler();
 
     final Runnable updateNoteLabelRunnable = new Runnable() {
         public void run() {
             //call the activity method that updates the UI
+            findViewById (R.id.activity_main).invalidate();
             updateNoteLabel();
         }
     };
+    private  ImageView crazyCircleAnim;
+    private int statusBarHeight;
+    private boolean crazyAllDay = true;
 
     protected void onResume() {
         super.onResume();
+        crazyAllDay = true;
         mSensorManager.registerListener(this, magnetic, SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_FASTEST);
     }
@@ -92,6 +102,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     protected void onPause() {
         super.onPause();
         playAudio = false;
+        crazyAllDay = false;
         mSensorManager.unregisterListener(this);
     }
 
@@ -108,6 +119,8 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         noteDisplay = (TextView)findViewById(R.id.noteText);
 
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
@@ -116,20 +129,20 @@ public class MainActivity extends Activity implements SensorEventListener {
         deviceWidth = size.x;
 
         t = new Thread(){
-          public void run(){
+            public void run(){
 
-              setPriority(Thread.MIN_PRIORITY);
+                setPriority(Thread.MIN_PRIORITY);
 
-              while(isRunning){
-                  try {
-                      Thread.sleep(20);
-                  } catch (InterruptedException e) {
-                      isRunning = false;
-                      return;
-                  }
-                  updateNoteLabelHandle.post(updateNoteLabelRunnable);
-              }
-          }
+                while(isRunning){
+                    try {
+                        Thread.sleep(20);
+                    } catch (InterruptedException e) {
+                        isRunning = false;
+                        return;
+                    }
+                    updateNoteLabelHandle.post(updateNoteLabelRunnable);
+                }
+            }
         };
         t.start();
         // start a new thread to synthesise audio
@@ -161,7 +174,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 
                 // synthesis loop
                 while(isRunning){
-                    if( !playAudio ){
+                    if( !playAudio && !crazyAllDay){
                         try {
                             Thread.sleep(20);
                         } catch (InterruptedException e) {
@@ -192,19 +205,48 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         circleView = ((ImageView)findViewById(R.id.circle));
 
+        crazyCircleView = ((ImageView) findViewById(R.id.crazy_circle));
+
+        //crazyCircleView.setVisibility(View.INVISIBLE);
+
+        statusBarHeight = getStatusBarHeight();
+
+        if( crazyAllDay )
+            ((ImageView)findViewById(R.id.circle)).startAnimation(circleAnim);
+
+    }
+
+    public int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
     }
 
     private double getNoteAsPowerOfTwo() {
-        return sliderval+2*octaveSwitch+2*(values[0]+values[1]+values[2]);
+        return sliderval+2*octaveSwitch+2*(values[1]+values[2]);
     }
 
-    /*
-        @Override
-        public boolean onCreateOptionsMenu(Menu menu) {
-            getMenuInflater().inflate(R.menu.menu_main, menu);
-            return true;
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        //getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.crazy_switch:
+                crazyAllDay = !crazyAllDay;
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-    */
+    }
+
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
@@ -216,6 +258,13 @@ public class MainActivity extends Activity implements SensorEventListener {
         SensorManager.getRotationMatrix(resultMatrix, null, acceleromterVector, magneticVector);
 // Demander au SensorManager le vecteur d'orientation associé (values)
         SensorManager.getOrientation(resultMatrix, values);
+        float shift = 10;
+        crazyCircleView.setX(crazyCircleView.getX()+shift*(values[2]));
+        crazyCircleView.setY(crazyCircleView.getY() + shift * (-values[1]));
+
+        if( crazyCircleView.getY()+crazyCircleView.getHeight() > deviceHeight){
+            crazyCircleView.setY(deviceHeight - crazyCircleView.getHeight()- statusBarHeight);
+        }
 
 //Log.d("lol", "" + );
         /*
@@ -257,6 +306,8 @@ public class MainActivity extends Activity implements SensorEventListener {
                 // Add a user's movement to the tracker.
                 mVelocityTracker.addMovement(event);
 
+                //crazyCircleView.setVisibility(View.VISIBLE);
+
                 break;
             case MotionEvent.ACTION_MOVE:
 
@@ -290,16 +341,18 @@ public class MainActivity extends Activity implements SensorEventListener {
                 }else if( sliderval > maxRange) {
                     sliderval = maxRange;
                 }
-/*
-                circleView.setX(event.getX());
-                circleView.setY(event.getY());
-*/
-                //Log.d("",event.getY() +" -- " + sliderval + " -- "+y);
+
+                crazyCircleView.setX(event.getX()-crazyCircleView.getWidth()/2);
+                crazyCircleView.setY(event.getY()-crazyCircleView.getHeight()-statusBarHeight);
 
                 break;
             case MotionEvent.ACTION_UP:
                 playAudio = false;
-                ((ImageView)findViewById(R.id.circle)).setAnimation(null);
+
+                if( !crazyAllDay )
+                    ((ImageView)findViewById(R.id.circle)).setAnimation(null);
+
+                //crazyCircleView.setVisibility(View.INVISIBLE);
                 break;
             case MotionEvent.ACTION_CANCEL:
                 playAudio = false;
@@ -311,7 +364,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     }
 
     private void updateNoteLabel() {
-        if( ! playAudio )
+        if( ! playAudio && !crazyAllDay )
             return;
         double p2 = getNoteAsPowerOfTwo();
         noteDisplay.setText(notesLabel[(char) Math.floor(p2)%notesLabel.length]);
@@ -329,9 +382,9 @@ public class MainActivity extends Activity implements SensorEventListener {
         }));
 
 
-        circleView.setScaleX((float)(p2*0.2));
+        circleView.setScaleX((float)(p2*0.4));
 
-        circleView.setScaleY((float)(p2*0.2));
+        circleView.setScaleY((float)(p2*0.4));
     }
 
 
