@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/AudioTest.iml" filepath="$PROJECT_DIR$/AudioTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Creasy-Pitch.iml" filepath="$PROJECT_DIR$/Creasy-Pitch.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>
